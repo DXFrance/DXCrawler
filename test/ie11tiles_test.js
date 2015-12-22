@@ -15,113 +15,115 @@
  * and limitations under the License.
  */
 
-"use strict";
+//*** check was removed - see run.js line 77 - so we don't need to test it
 
-var ie10fav = require('../lib/checks/check-ie11tiles.js'),
-    url = require('url'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    testServer = require('../static/test-server.js'),
-    testUrl = 'http://localhost:' + testServer.port + '/ie11tiles-';
+//"use strict";
 
-
-function checkPage(page, expected) {
-    return function (test) {
-        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
-            tests = 1;
-
-        if (expected.data) {
-            tests += Object.keys(expected.data).length;
-        }
+//var ie10fav = require('../lib/checks/check-ie11tiles.js'),
+//    url = require('url'),
+//    request = require('request'),
+//    cheerio = require('cheerio'),
+//    testServer = require('../static/test-server.js'),
+//    testUrl = 'http://localhost:' + testServer.port + '/ie11tiles-';
 
 
-        test.expect(tests);
+//function checkPage(page, expected) {
+//    return function (test) {
+//        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
+//            tests = 1;
 
-        request(uri, function (error, response, content) {
-            var website = {
-                url: url.parse(uri),
-                content: content,
-                $: cheerio.load(content)
-            };
+//        if (expected.data) {
+//            tests += Object.keys(expected.data).length;
+//        }
 
-            ie10fav.check(website).then(function (result) {
-                test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
-                if (expected.data) {
-                    for (var key in expected.data) {
-                        test.equal(result.data[key], expected.data[key], uri + " key: " + result.data[key] + " !== " + expected.data[key]);
-                    }
-                }
-                test.done();
-            });
-        });
-    };
-}
 
-module.exports['IE11 Tiles'] = {
-    'No metatags': checkPage('1.html', {
-        passed: false,
-        data: {
-            square70: false,
-            square150: false,
-            wide310: false,
-            square310: false
-        }}),
-    'Only small': checkPage('2.html', {
-        passed: true,
-        data: {
-            square70: true,
-            square150: false,
-            wide310: false,
-            square310: false
-        }}),
-    'Only medium': checkPage('3.html', {
-        passed: true,
-        data: {
-            square70: false,
-            square150: true,
-            wide310: false,
-            square310: false
-        }}),
-    'Only wide': checkPage('4.html', {
-        passed: true,
-        data: {
-            square70: false,
-            square150: false,
-            wide310: true,
-            square310: false
-        }}),
-    'Only large': checkPage('5.html', {
-        passed: true,
-        data: {
-            square70: false,
-            square150: false,
-            wide310: false,
-            square310: true
-        }}),
-    'All': checkPage('6.html', {
-        passed: true,
-        data: {
-            square70: true,
-            square150: true,
-            wide310: true,
-            square310: true
-        }}),
-    'XML Config': checkPage('7.html', {
-        passed: true,
-        data: {
-            square70: true,
-            square150: true,
-            wide310: true,
-            square310: true,
-            notifications: true
-        }}),
-    'Notifications meta': checkPage('8.html', {
-        passed: true,
-        data: {
-            square70: false,
-            square150: false,
-            wide310: false,
-            square310: false,
-            notifications: true
-        }})
-};
+//        test.expect(tests);
+
+//        request(uri, function (error, response, content) {
+//            var website = {
+//                url: url.parse(uri),
+//                content: content,
+//                $: cheerio.load(content)
+//            };
+
+//            ie10fav.check(website).then(function (result) {
+//                test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
+//                if (expected.data) {
+//                    for (var key in expected.data) {
+//                        test.equal(result.data[key], expected.data[key], uri + " key: " + result.data[key] + " !== " + expected.data[key]);
+//                    }
+//                }
+//                test.done();
+//            });
+//        });
+//    };
+//}
+
+//module.exports['IE11 Tiles'] = {
+//    'No metatags': checkPage('1.html', {
+//        passed: false,
+//        data: {
+//            square70: false,
+//            square150: false,
+//            wide310: false,
+//            square310: false
+//        }}),
+//    'Only small': checkPage('2.html', {
+//        passed: true,
+//        data: {
+//            square70: true,
+//            square150: false,
+//            wide310: false,
+//            square310: false
+//        }}),
+//    'Only medium': checkPage('3.html', {
+//        passed: true,
+//        data: {
+//            square70: false,
+//            square150: true,
+//            wide310: false,
+//            square310: false
+//        }}),
+//    'Only wide': checkPage('4.html', {
+//        passed: true,
+//        data: {
+//            square70: false,
+//            square150: false,
+//            wide310: true,
+//            square310: false
+//        }}),
+//    'Only large': checkPage('5.html', {
+//        passed: true,
+//        data: {
+//            square70: false,
+//            square150: false,
+//            wide310: false,
+//            square310: true
+//        }}),
+//    'All': checkPage('6.html', {
+//        passed: true,
+//        data: {
+//            square70: true,
+//            square150: true,
+//            wide310: true,
+//            square310: true
+//        }}),
+//    'XML Config': checkPage('7.html', {
+//        passed: true,
+//        data: {
+//            square70: true,
+//            square150: true,
+//            wide310: true,
+//            square310: true,
+//            notifications: true
+//        }}),
+//    'Notifications meta': checkPage('8.html', {
+//        passed: true,
+//        data: {
+//            square70: false,
+//            square150: false,
+//            wide310: false,
+//            square310: false,
+//            notifications: true
+//        }})
+//};

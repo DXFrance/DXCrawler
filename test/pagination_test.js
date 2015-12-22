@@ -15,59 +15,61 @@
  * and limitations under the License.
  */
 
-"use strict";
+//*** check was removed - see run.js line 77 - so we don't need to test it
 
-var pagination = require('../lib/checks/check-pagination.js'),
-    url = require('url'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    testServer = require('../static/test-server.js'),
-    testUrl = 'http://localhost:' + testServer.port + '/pagination-';
+//"use strict";
 
-
-function checkPage(page, expected) {
-    return function (test) {
-        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
-            tests = 1;
-
-        if (expected.data) {
-            tests += Object.keys(expected.data).length;
-        }
+//var pagination = require('../lib/checks/check-pagination.js'),
+//    url = require('url'),
+//    request = require('request'),
+//    cheerio = require('cheerio'),
+//    testServer = require('../static/test-server.js'),
+//    testUrl = 'http://localhost:' + testServer.port + '/pagination-';
 
 
-        test.expect(tests);
+//function checkPage(page, expected) {
+//    return function (test) {
+//        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
+//            tests = 1;
 
-        request(uri, function (error, response, content) {
-            var website = {
-                url: url.parse(uri),
-                content: content,
-                $: cheerio.load(content)
-            };
+//        if (expected.data) {
+//            tests += Object.keys(expected.data).length;
+//        }
 
-            pagination.check(website).then(function (result) {
-                test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
-                if (expected.data) {
-                    for(var key in expected.data){
-                        test.equal(result.data[key], expected.data[key], uri + " key: " + result.data[key] + " !== " + expected.data[key]);
-                    }
-                }
-                test.done();
-            });
-        });
-    };
-}
 
-module.exports['Pagination'] = {
-    'No pagination': checkPage('1.html', {
-        passed: false
-    }),
-    'Pagination - Next': checkPage('2.html', {
-        passed: true
-    }),
-    'Pagination - Prev': checkPage('3.html', {
-        passed: true
-    }),
-    'Pagination - Prev/Next': checkPage('4.html', {
-        passed: true
-    })
-};
+//        test.expect(tests);
+
+//        request(uri, function (error, response, content) {
+//            var website = {
+//                url: url.parse(uri),
+//                content: content,
+//                $: cheerio.load(content)
+//            };
+
+//            pagination.check(website).then(function (result) {
+//                test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
+//                if (expected.data) {
+//                    for(var key in expected.data){
+//                        test.equal(result.data[key], expected.data[key], uri + " key: " + result.data[key] + " !== " + expected.data[key]);
+//                    }
+//                }
+//                test.done();
+//            });
+//        });
+//    };
+//}
+
+//module.exports['Pagination'] = {
+//    'No pagination': checkPage('1.html', {
+//        passed: false
+//    }),
+//    'Pagination - Next': checkPage('2.html', {
+//        passed: true
+//    }),
+//    'Pagination - Prev': checkPage('3.html', {
+//        passed: true
+//    }),
+//    'Pagination - Prev/Next': checkPage('4.html', {
+//        passed: true
+//    })
+//};

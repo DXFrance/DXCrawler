@@ -6,7 +6,7 @@
     <ProjectGuid>{496408c0-9320-41b9-b43f-1f86c774581a}</ProjectGuid>
     <ProjectHome />
     <ProjectView>ShowAllFiles</ProjectView>
-    <StartupFile>app.js</StartupFile>
+    <StartupFile>App_Data\jobs\triggered\scan\run.js</StartupFile>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
@@ -15,6 +15,8 @@
     <NodejsPort>1337</NodejsPort>
     <StartWebBrowser>True</StartWebBrowser>
     <NodeExeArguments>--max-old-space-size=5120</NodeExeArguments>
+    <LaunchUrl>http://localhost:1337/api/v2/scan?url=http://www.runtastic.com</LaunchUrl>
+    <ScriptArguments>nodeunit</ScriptArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />

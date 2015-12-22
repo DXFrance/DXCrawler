@@ -43,6 +43,7 @@ if (!argv.file)
     else
         argv.file = './websites.csv';
 
+
 if (!argv.prefix && argv.azure)
     argv.prefix = 'http://sites-scanner.azurewebsites.net/api/v2/scan?url=http://';
 
@@ -91,50 +92,68 @@ var tests = [
 
 var prefix = argv.prefix;
 
-var today = new Date();
-var dd = today.getDate();
-var mm = today.getMonth() + 1;//January is 0!`
 
-var yyyy = today.getFullYear();
-if (dd < 10)
-    dd = '0' + dd;
+var suffix = createSuffix(new Date());
+var originalSuffix = suffix;
 
-if (mm < 10)
-    mm = '0' + mm;
-
-var suffix = mm + '-' + dd + '-' + yyyy + '_';
 var outputResultsFile = 'results' + suffix + '.csv';
 var outputErrorsFile = 'errors' + suffix + '.txt';
 var summaryErrorsFile = 'summary' + suffix + '.csv';
 var errors = "";
 
-// Clean up output files before appending data
-fs.writeFileSync(outputResultsFile, "");
-fs.writeFileSync(outputErrorsFile, "");
-fs.writeFileSync(summaryErrorsFile, "");
 
-if (useazurestorage) {
-    console.log('account name', config.storage_account_name);
-    console.log('access key', config.storage_account_key);
-}
-
-if (useazureassource) {
-    var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
-    console.log('reading blob', argv.file);
-    blobSvc.getBlobToText(config.website_list_container_name, argv.file, function (err, text, blockBlob, response) {
-        if (err) {
-            console.log(err);
-            return;
-        }
-        
-        var lines = text.trim().split('\r\n');
-        doLines(lines);
-    });
-}
-else {
-    var lines = fs.readFileSync(argv.file, 'utf8').trim().split('\r\n');
+startRun = function () {
+    errors = "";
+    //Clean up output files before appending data
+    fs.writeFileSync(outputResultsFile, "");
+    fs.writeFileSync(outputErrorsFile, "");
+    fs.writeFileSync(summaryErrorsFile, "");
     
-    doLines(lines);
+    errorCount = 0;
+    areas = [];
+    ranks = [];
+    drows = {};
+    retryRows = {};
+    nrows = 0;
+    
+    if (useazurestorage) {
+        console.log('account name', config.storage_account_name);
+        console.log('access key', config.storage_account_key);
+    }
+    
+    if (useazureassource) {
+        var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
+        console.log('reading blob', argv.file);
+        blobSvc.getBlobToText(config.website_list_container_name, argv.file, function (err, text, blockBlob, response) {
+            if (err) {
+                console.log(err);
+                return;
+            }
+            
+            var lines = text.trim().split('\r\n');
+            determineProgress(lines);
+        });
+    }
+    else {
+        var lines = fs.readFileSync(argv.file, 'utf8').trim().split('\r\n');
+        
+        determineProgress(lines);
+    }
+}
+startRun();
+
+function createSuffix(date) {
+    var dd = date.getDate();
+    var mm = date.getMonth() + 1;//January is 0!`
+    
+    var yyyy = date.getFullYear();
+    if (dd < 10)
+        dd = '0' + dd;
+    
+    if (mm < 10)
+        mm = '0' + mm;
+    
+    return mm + '-' + dd + '-' + yyyy + '_';
 }
 
 function saveDataToAzureFile(filename, data, callback) {
@@ -142,10 +161,10 @@ function saveDataToAzureFile(filename, data, callback) {
     fs.appendFile(filename, data, function (err1) {
         if (!err1) {
             console.log("'" + filename + "' local file appended.");
-
+            
             // Upload to blob storage from local file
             var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
-            
+            //Remark: this overwrites the blob with the latest update over and over again, instead of updating the blob?
             blobSvc.createBlockBlobFromLocalFile(config.website_list_container_name, filename, filename, function (err2) {
                 if (!err2) {
                     console.log("'" + filename + "' blob uploaded.");
@@ -179,8 +198,95 @@ function saveDataToFile(filename, data, callback) {
 
 var starting;
 
-function doLines(lines) {
+function determineProgress(lines) {
+    var progress = [];
+    if (useazureassource) {
+        var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
+        var startDate = new Date();
+        var endDate = new Date(startDate.getTime() - (10 * 24 * 60 * 60 * 1000)); //go back 10 days
+        var currentDate = new Date(startDate.getTime());
+        
+        
+        complete = function () {
+            outputResultsFile = 'results' + suffix + '.csv';
+            outputErrorsFile = 'errors' + suffix + '.txt';
+            summaryErrorsFile = 'summary' + suffix + '.csv';
+            
+            
+            console.log('reading blob to determine progress', outputResultsFile);
+            blobSvc.getBlobToText(config.website_list_container_name, outputResultsFile, function (err, text, blockBlob, response) {
+                if (err) {
+                    console.log(err);
+                    doLines(lines, progress);
+                }
+                else {
+                    if (text) {
+                        progress = text.trim().split('\n');
+                        
+                        for (var progressCounter = 0; progressCounter < progress.length; progressCounter++) {
+                            var currentProgressLine = progress[progressCounter];
+                            if (currentProgressLine) {
+                                currentProgressLine = currentProgressLine.split(',')[2]; //'rank, area, url'
+                                currentProgressLine = prefix + currentProgressLine
+                                    .split('"').join('').split('\'').join(''); //current progress now has "somesite.com" with quotes around it?
+                                progress[progressCounter] = currentProgressLine;
+                            }
+                        }
+                           
+                    }
+                    doLines(lines, progress);
+                }
+            });
+        };
+        
+        
+        findLastIncompleteFile = function () {
+            var previousSuffix = createSuffix(currentDate);
+            blobSvc.doesBlobExist(config.website_list_container_name, 'completedresults' + previousSuffix + '.csv', function (err, result, response) {
+                if (!err && result) {
+                    //we have a completed file, just continue with the suffix kept at 'today'
+                    console.log("We have a completed date at " + previousSuffix + ", so let's start fresh with today");
+                    //Reset suffix, in case this 'run' finished an earlier run first;
+                    suffix = originalSuffix;
+                    doLines(lines, progress);
+                }
+                else {
+                    blobSvc.doesBlobExist(config.website_list_container_name, 'results' + previousSuffix + '.csv', function (err2, result2, response2) {
+                        if (!err2 && result2) {
+                            //we have an incomplete results file, let's continue on this one!
+                            console.log("We have a incomplete date at " + previousSuffix + ", so let's finish that up first!");
+                            suffix = previousSuffix;
+                            complete();
+                        }
+                        else {
+                            //we have absolutely nothing for this date...
+                            currentDate.setTime(currentDate.getTime() - (1 * 24 * 60 * 60 * 1000));
+                            
+                            //Let's check the day before, or
+                            if (currentDate.getTime() >= endDate.getTime())
+                                findLastIncompleteFile();
+                            //Let's just roll with 'today'
+                            else
+                                complete();
+                        }
+                    });
+                }
+            });
+        }
+        
+        console.log("Trying to determine which date to run...");
+        findLastIncompleteFile();
+    }
+    else {
+        progress = fs.readFileSync(argv.progressFile, 'utf8').trim().split('\n');
+        
+        doLines(lines, progress);
+    }
+}
+
+function doLines(lines, progress) {
     console.log(lines.length + ' to analyze');
+    console.log(progress.length + ' of those already analyzed');
     
     var websites = lines.map(function (line) {
         var split = line.split(",");
@@ -197,7 +303,7 @@ function doLines(lines) {
     console.log('processing ' + websites.length + ' sites');
     console.log('date/time', new Date());
     console.log('current free memory:' + os.freemem());
-
+    
     
     if (useazurestorage) {
         var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
@@ -205,15 +311,39 @@ function doLines(lines) {
         blobSvc.createContainerIfNotExists(config.website_list_container_name, { publicAccessLevel: 'blob' }, function (error, result, response) {
             if (error)
                 console.log(error);
-            else
-                doWork(websites);
+            else {
+                if (suffix === originalSuffix)
+                    
+                    doWork(websites, progress);
+                else {
+                    console.log("Downloading previous progress...");
+                    blobSvc.getBlobToLocalFile(config.website_list_container_name, outputResultsFile, outputResultsFile, function (err1) {
+                        if (err1)
+                            console.log(err1);
+                        else
+                            fs.app
+                        blobSvc.getBlobToLocalFile(config.website_list_container_name, outputErrorsFile, outputErrorsFile, function (err2) {
+                            if (err2)
+                                console.log(err2);
+                            else
+                                errors = fs.readFileSync(outputErrorsFile);
+                            blobSvc.getBlobToLocalFile(config.website_list_container_name, summaryErrorsFile, summaryErrorsFile, function (err3) {
+                                if (err3)
+                                    console.log(err3);
+                                doWork(websites, progress);
+                            });
+                        });
+                    })
+                };
+            }
+			//	
         });
     }
     else
-        doWork(websites);
+        doWork(websites, progress);
 }
 
-function doWork(websites) {
+function doWork(websites, progress) {
     function getComment(body) {
         if (body.results)
             return "N/A";
@@ -445,81 +575,101 @@ function doWork(websites) {
         var content;
         
         try {
-            var body;
             
-            if (typeof data.body != 'undefined' && data.body.indexOf('{') < 0)
-                body = data.body;
-            else
-                body = JSON.parse(data.body);
-            
-            if (body.machine) {
-                if (!machines[body.machine])
-                    machines[body.machine] = 0;
-                machines[body.machine] = machines[body.machine] + 1;
-            }
-            
-            var info = body.results;
             var url = data.url.replace(prefix, "");
-            var comment = getComment(body);
             
-            var row = {
-                rank: ranks[data.url], 
-                area: areas[data.url],
-                url: url,
-                tests: [],
-                summary: [],
-                comment: comment
+            if (data.skipped || (url && url.toLowerCase() === 'url')) {
+                drows[data.url] = {
+                    url: url,
+                    skipped : true
+                };
+                nrows++;
             }
-            
-            tests.forEach(function (item) {
-                var testResult = "N/A";
-                var testSummary = "N/A";
-                if (info && info[item]) {
-                    var result = info[item];
-                    testResult = result.passed ? 1 : 0;
-                    testSummary = getSummary(item, result);
+            else {
+                
+                var body;
+                
+                if (typeof data.body != 'undefined' && data.body.indexOf('{') < 0)
+                    body = data.body;
+                else
+                    body = JSON.parse(data.body);
+                
+                if (body.machine) {
+                    if (!machines[body.machine])
+                        machines[body.machine] = 0;
+                    machines[body.machine] = machines[body.machine] + 1;
                 }
                 
-                row.tests.push(testResult);
-                row.summary.push(testSummary);
-            });
-            
-            console.log('Checked - ' + data.url);
-            
-            if (comment != "N/A" && comment) {
-                console.log(comment);
-                batch.onError(data.url, comment);
+                var info = body.results;
                 
-                if (comment.indexOf("ENOTFOUND") < 0 && data.url && !retryRows[data.url]) {
-                    retryRows[data.url] = true;
-                    console.log('To Retry', data.url);
-                    batch.pushRequestPage(data.url);
+                var comment = getComment(body);
+                
+                var row = {
+                    rank: ranks[data.url], 
+                    area: areas[data.url],
+                    url: url,
+                    tests: [],
+                    summary: [],
+                    comment: comment
+                }
+                
+                tests.forEach(function (item) {
+                    var testResult = "N/A";
+                    var testSummary = "N/A";
+                    if (info && info[item]) {
+                        var result = info[item];
+                        testResult = result.passed ? 1 : 0;
+                        testSummary = getSummary(item, result);
+                    }
+                    
+                    row.tests.push(testResult);
+                    row.summary.push(testSummary);
+                });
+                
+                console.log('Checked - ' + data.url);
+                
+                if (comment != "N/A" && comment) {
+                    console.log(comment);
+                    batch.onError(data.url, comment);
+                    
+                    if (comment.indexOf("ENOTFOUND") < 0 && data.url && !retryRows[data.url]) {
+                        retryRows[data.url] = row;
+                        console.log('To Retry', data.url);
+                        batch.pushRequestPage(data.url);
+                    }
+                    else {
+                        drows[data.url] = row;
+                        nrows++;
+                        delete retryRows[data.url];
+                    }
                 }
                 else {
                     drows[data.url] = row;
                     nrows++;
-                    delete retryRows[data.url];
                 }
-            }
-            else {
-                drows[data.url] = row;
-                nrows++;
             }
             
             // dump partial results every DUMP_RESULTS checks
             if (!!nrows && nrows % DUMP_RESULTS == 0) {
                 console.log('current free memory:' + os.freemem());
-
+                
                 var newresults = '';
                 var newsummary = '';
                 
-                if (nrows <= DUMP_RESULTS) {
-                    newresults = 'rank,area,url,' + tests.join(',') + ',comments\n';
-                    newsummary = 'rank,area,url,' + tests.join(',') + '\n';
-                }
-
+                
+                var firstRow = true;
                 for (var n in drows) {
                     var row = drows[n];
+                    if (firstRow) {
+                        firstRow = false;
+                        if (!row.skipped) {
+                            if (nrows <= DUMP_RESULTS) {
+                                newresults = 'rank,area,url,' + tests.join(',') + ',comments\n';
+                                newsummary = 'rank,area,url,' + tests.join(',') + '\n';
+                            }
+                        }
+                    }
+                    
                     if (row.rank) {
                         newresults += row.rank + "," + row.area + "," + row.url + "," + row.tests.join(",") + "," + row.comment + "\n";
                         newsummary += row.rank + "," + row.area + "," + row.url + "," + row.summary.join(",") + "\n";
@@ -527,12 +677,12 @@ function doWork(websites) {
                         newresults += ",," + row.url + "," + row.tests.join(",") + "," + row.comment + "\n";
                         newsummary += ",," + row.url + "," + row.summary.join(",") + "\n";
                     }
-
                     delete drows[n];
                 }
-                
-                saveDataToFile(summaryErrorsFile, newsummary);
-                saveDataToFile(outputResultsFile, newresults);
+                if (newsummary)
+                    saveDataToFile(summaryErrorsFile, newsummary);
+                if (newresults)
+                    saveDataToFile(outputResultsFile, newresults);
                 
                 newresults = null;
                 newsummary = null;
@@ -568,7 +718,7 @@ function doWork(websites) {
             batch.onError(data.url, err);
             
             if (data && data.body == '' && data.url && !retryRows[data.url]) {
-                retryRows[data.url] = true;
+                retryRows[data.url] = row;
                 console.log('To Retry', data.url);
                 batch.pushRequestPage(data.url);
             }
@@ -584,6 +734,14 @@ function doWork(websites) {
     }
     
     batch.onFinish = function () {
+        //Bugfix: if the last websites are in the 'retry' queue, the crawler calls finish
+        //and these websites are not pushed to the results file.
+        for (var n in retryRows) {
+            var notRetried = retryRows[n];
+            console.log(notRetried);
+            drows[notRetried.url] = notRetried;
+        }
+
         var ending = new Date();
         console.log('ending date/time', ending);
         
@@ -597,13 +755,21 @@ function doWork(websites) {
         var newresults = '';
         var newsummary = '';
         
-        if (nrows <= DUMP_RESULTS) {
-            newresults = 'rank,area,url,' + tests.join(',') + ',comments\n';
-            newsummary = 'rank,area,url,' + tests.join(',') + '\n';
-        }
-        
+        console.log(drows);
+
+        var firstRow = true;
         for (var n in drows) {
             var row = drows[n];
+            if (firstRow) {
+                firstRow = false;
+                if (!row.skipped) {
+                    if (nrows <= DUMP_RESULTS) {
+                        newresults = 'rank,area,url,' + tests.join(',') + ',comments\n';
+                        newsummary = 'rank,area,url,' + tests.join(',') + '\n';
+                    }
+                }
+            }
+            
             if (row.rank) {
                 newresults += row.rank + "," + row.area + "," + row.url + "," + row.tests.join(",") + "," + row.comment + "\n";
                 newsummary += row.rank + "," + row.area + "," + row.url + "," + row.summary.join(",") + "\n";
@@ -612,17 +778,44 @@ function doWork(websites) {
                 newsummary += ",," + row.url + "," + row.summary.join(",") + "\n";
             }
         }
+
+        tryAndWrapUp = function () {
+            if (originalSuffix != suffix) {
+                console.log("That's all folks. I finished a previous run, perhaps you'd like to reschedule me to start with a fresh run for today");
+                //startRun();
+            }
+            else {
+                console.log("That's all folks!");
+            }
+        }
+
+       
         
         saveDataToFile(summaryErrorsFile, newsummary, function () {
             if (useazureastarget) {
                 // Remove local file
                 fs.unlinkSync(summaryErrorsFile);
+
             }
         });
         saveDataToFile(outputResultsFile, newresults, function () {
             if (useazureastarget) {
                 // Remove local file
                 fs.unlinkSync(outputResultsFile);
+                
+                
+                if (useazureastarget) {
+                    console.log("Renaming file from results to completedresults");
+                    
+                    var blobSvc = azure.createBlobService(config.storage_account_name, config.storage_account_key);
+                    var resultsUrl = blobSvc.getUrl(config.website_list_container_name, outputResultsFile);
+                    blobSvc.startCopyBlob(resultsUrl, config.website_list_container_name, 'completedresults' + suffix + ".csv", function (err, result) {
+                        tryAndWrapUp();
+                    });
+                }
+                else {
+                    tryAndWrapUp();
+                }
             }
         });
         
@@ -634,6 +827,11 @@ function doWork(websites) {
         
         for (var n in machines)
             console.log('machine', n, machines[n]);
+        
+        
+        console.log("Completely done with: " + suffix);
+        
+        
     };
     
     batch.onError = function (url, err) {
@@ -650,14 +848,14 @@ function doWork(websites) {
     
     if (issimulation) {
         websites.forEach(function (website) {
-            var data = { url: website, body: jsonresponse };
+            var data = { url: website, body: jsonresponse, skipped : false };
             processData(data);
         });
         
         batch.onFinish();
     }
     else
-        batch.start(connections, websites, function (data) {
+        batch.start(connections, websites, progress, function (data) {
             processData(data);
         });
 }

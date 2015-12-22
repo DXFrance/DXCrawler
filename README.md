@@ -11,6 +11,12 @@ The core functionality of the sites-scanner sites is the **scan** endpoint which
 
 The original endpoint URL was changed to `/api/v2/scan` in order to be able to test multiple version of the scanner.
 
+To try it locally:
+	- Clone the repo
+	- npm install
+	- node app.js
+	- Open your browser and navigate to "http://localhost:1337/api/v2/scan?url=http://www.bing.com"
+
 ### Example
 
 A `GET` request issued to `http://sites-scanner.azurewebsites.net/api/v2/scan?url=http://www.microsoft.com/` returns a JSON response containing the scan results of `microsoft.com`.

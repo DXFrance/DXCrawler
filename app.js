@@ -355,7 +355,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/websites', returnWebsites);
 app.get('/scanresults', returnScanResults);
 
-app.post('/sites', handleCsvUpload);
+//app.post('/sites', handleCsvUpload);
 
 app.get('/api/v2/scan', handleRequestV2);
 app.get('/api/v2/error', function (req, res) {

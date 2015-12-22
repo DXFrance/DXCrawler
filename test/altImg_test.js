@@ -15,6 +15,8 @@
  * and limitations under the License.
  */
 
+//*** check was removed - see run.js line 77 - so we don't need to test it
+/*
 "use strict";
 
 var input = require('../lib/checks/check-accessibility-alt.js'),
@@ -72,3 +74,4 @@ module.exports['AltImg'] = {
         data: ['image.png']
     })
 };
+ */

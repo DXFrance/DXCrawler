@@ -14,6 +14,8 @@
  * See the Apache Version 2.0 License for specific language governing permissions
  * and limitations under the License.
  */
+
+   //*** check was removed - see run.js line 77 - so we don't need to test it
  
 "use strict";
 
@@ -60,11 +62,11 @@ module.exports['Compatibility List'] = {
     'www.modern.ie - Not CV list': checkPage('http://www.modern.ie', {passed: true}),
     'Present (aladin.co.kr)': checkPage('http://aladin.co.kr', {passed: false,
         data: {
-            source: 'cvlist',
-            mode: 'EmulateIE7'
+            source: 'cvlist'
         }
-    }),
-    'Website in cvlist but only for Flash (santandernet.com.br)': checkPage('http://santandernet.com.br', {passed: true}),
+   }), 
+    /* website currently not available => removed from the tests
+    'Website in cvlist but only for Flash (santandernet.com.br)': checkPage('http://santandernet.com.br', {passed: true}), */
     'No metatag': checkPage('1.html', {passed: true}),
     'IE=5': checkPage('2.html', {passed: false,
         data: {

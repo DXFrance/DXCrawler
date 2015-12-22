@@ -16,56 +16,58 @@
  * and limitations under the License.
  */
 
-"use strict";
+//*** check was removed - see run.js line 77 - so we don't need to test it
 
-var service = require('../app.js'),
-    serviceUrl = 'http://localhost:' + service.port + '/?url=%0',
-    authServer = require('../static/compress-server.js'),
-    serverUrl = 'http%3A%2F%2Flocalhost%3A' + authServer.port + '%2Fcompress-',
-    request = require('request');
+//"use strict";
+
+//var service = require('../app.js'),
+//    serviceUrl = 'http://localhost:' + service.port + '/?url=%0',
+//    authServer = require('../static/compress-server.js'),
+//    serverUrl = 'http%3A%2F%2Flocalhost%3A' + authServer.port + '%2Fcompress-',
+//    request = require('request');
 
 
-function checkObject(object, expected, test) {
-    for (var key in expected) {
-        if (typeof expected[key] === "object") {
-            checkObject(object[key], expected[key], test);
-        } else {
-            test.equal(object[key], expected[key],  object[key] + " !== " + expected[key]);
-        }
-    }
-}
+//function checkObject(object, expected, test) {
+//    for (var key in expected) {
+//        if (typeof expected[key] === "object") {
+//            checkObject(object[key], expected[key], test);
+//        } else {
+//            test.equal(object[key], expected[key],  object[key] + " !== " + expected[key]);
+//        }
+//    }
+//}
 
-function deepCount(object){
-    var count = 0;
-    if(typeof object === "object"){
-        for(var key in object){
-            count += deepCount(object[key]);
-        }
-    }else{
-        count++;
-    }
-    return count;
-}
+//function deepCount(object){
+//    var count = 0;
+//    if(typeof object === "object"){
+//        for(var key in object){
+//            count += deepCount(object[key]);
+//        }
+//    }else{
+//        count++;
+//    }
+//    return count;
+//}
 
-function checkPage(page, expected, auth) {
-    return function (test) {
-        var uri = page.indexOf('http') === 0 ? page : serviceUrl.replace('%0', serverUrl + page),
-            tests = deepCount(expected);
+//function checkPage(page, expected, auth) {
+//    return function (test) {
+//        var uri = page.indexOf('http') === 0 ? page : serviceUrl.replace('%0', serverUrl + page),
+//            tests = deepCount(expected);
 
-//       if (auth) {
-//           uri += authString.replace('%1', auth.user).replace('%2', auth.password);
-//       }
+////       if (auth) {
+////           uri += authString.replace('%1', auth.user).replace('%2', auth.password);
+////       }
 
-        test.expect(tests);
+//        test.expect(tests);
 
-        request(uri, function (error, response, content) {
-            var result = JSON.parse(content);
-            checkObject(result, expected, test);
-            test.done();
-        });
-    };
-}
+//        request(uri, function (error, response, content) {
+//            var result = JSON.parse(content);
+//            checkObject(result, expected, test);
+//            test.done();
+//        });
+//    };
+//}
 
-module.exports['Compression Tests'] = {
-    'Compress': checkPage('1.html', {results: {compression: {passed: true}}})
-};
+//module.exports['Compression Tests'] = {
+//    'Compress': checkPage('1.html', {results: {compression: {passed: true}}})
+//};

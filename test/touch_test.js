@@ -15,74 +15,76 @@
  * and limitations under the License.
  */
 
-"use strict";
+//*** check was removed - see run.js line 77 - so we don't need to test it
 
-var touchChecker = require('../lib/checks/no-check-touch.js'),
-    url = require('url'),
-    cssloader = require('../lib/checks/loadcss.js'),
-    config = require('../lib/checks/config.js'),
-    jsLoader = require('../lib/checks/loadjs.js'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    testServer = require('../static/test-server.js'),
-    testUrl = 'http://localhost:' + testServer.port + '/touch-';
+//"use strict";
+
+//var touchChecker = require('../lib/checks/no-check-touch.js'),
+//    url = require('url'),
+//    cssloader = require('../lib/checks/loadcss.js'),
+//    config = require('../lib/checks/config.js'),
+//    jsLoader = require('../lib/checks/loadjs.js'),
+//    request = require('request'),
+//    cheerio = require('cheerio'),
+//    testServer = require('../static/test-server.js'),
+//    testUrl = 'http://localhost:' + testServer.port + '/touch-';
 
 
-function checkPage(page, expected) {
-    return function (test) {
-        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
-            tests = 1;
+//function checkPage(page, expected) {
+//    return function (test) {
+//        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
+//            tests = 1;
 
-        if (expected.data) {
-            tests += Object.keys(expected.data).length;
-        }
+//        if (expected.data) {
+//            tests += Object.keys(expected.data).length;
+//        }
 
-        test.expect(tests);
+//        test.expect(tests);
 
-        request({uri: uri,
-                headers: {'user-agent': config.user_agent_edge}},
-            function (error, response, content) {
-                var website = {
-                    url: url.parse(uri),
-                    content: content,
-                    $: cheerio.load(content)
-                };
+//        request({uri: uri,
+//                headers: {'user-agent': config.user_agent_edge}},
+//            function (error, response, content) {
+//                var website = {
+//                    url: url.parse(uri),
+//                    content: content,
+//                    $: cheerio.load(content)
+//                };
 
-                cssloader.loadCssFiles(website)
-                    .then(jsLoader.loadjsFiles)
-                    .then(touchChecker.check)
-                    .then(function (result) {
-                        test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
+//                cssloader.loadCssFiles(website)
+//                    .then(jsLoader.loadjsFiles)
+//                    .then(touchChecker.check)
+//                    .then(function (result) {
+//                        test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
 
-                        if (expected.data) {
-                            for (var key in expected.data) {
-                                test.strictEqual(result.data[key], expected.data[key], uri + " " + key + " " + result.data[key] + " !== " + expected.data[key]);
-                            }
-                        }
-                        test.done();
-                    });
-            });
-    };
-}
+//                        if (expected.data) {
+//                            for (var key in expected.data) {
+//                                test.strictEqual(result.data[key], expected.data[key], uri + " " + key + " " + result.data[key] + " !== " + expected.data[key]);
+//                            }
+//                        }
+//                        test.done();
+//                    });
+//            });
+//    };
+//}
 
-module.exports['Touch tests'] = {
-    'No Touch CSS': checkPage("1.html", {passed: false}),
-    'No Touch in CSS': checkPage("2.html", {passed: false}),
-    'ms-touch-action': checkPage("3.html", {passed: true}),
-    'ms-touch-action embed': checkPage("4.html", {passed: true}),
-    'msPointerEnabled': checkPage("5.html", {passed: true}),
-    'msPointerEnabled embed': checkPage("6.html", {passed: true})
-//    'No -ms-touch-action': checkPage("http://www.google.com", {passed: false}),
-//    'Uses touch': checkPage("http://ie.microsoft.com/testdrive/Graphics/TouchEffects/", {passed: true}),
-//    'Uses touch with an @import rule': checkPage("http://www.computer-service-goeppingen.de", {passed: true}),
-//    'www.ietestdrive.com': checkPage("http://www.ietestdrive.com", {passed: true}),
-//    'ie.microsoft.com/testdrive/Graphics/TouchEffects/': checkPage("http://ie.microsoft.com/testdrive/Graphics/TouchEffects/", {passed: true}),
-//    'ie.microsoft.com/testdrive/Browser/BrowserSurface/': checkPage("http://ie.microsoft.com/testdrive/Browser/BrowserSurface/", {passed: true}),
-//    'maps.bing.com': checkPage("http://maps.bing.com", {passed: true}),
-//    'maps.google.com': checkPage("http://maps.google.com", {passed: true}),
-//    't.msn.com': checkPage("http://t.msn.com", {passed: true}),
-//    'www.craigslist.org': checkPage("http://www.craigslist.org", {passed: true}),
-//    'www.reddit.com': checkPage("http://www.reddit.com", {passed: false}),
-//    'www.microsoft.com': checkPage("http://www.microsoft.com", {passed: false}),
-//    'www.windows.com': checkPage("http://www.windows.com", {passed: false})
-};
+//module.exports['Touch tests'] = {
+//    'No Touch CSS': checkPage("1.html", {passed: false}),
+//    'No Touch in CSS': checkPage("2.html", {passed: false}),
+//    'ms-touch-action': checkPage("3.html", {passed: true}),
+//    'ms-touch-action embed': checkPage("4.html", {passed: true}),
+//    'msPointerEnabled': checkPage("5.html", {passed: true}),
+//    'msPointerEnabled embed': checkPage("6.html", {passed: true})
+////    'No -ms-touch-action': checkPage("http://www.google.com", {passed: false}),
+////    'Uses touch': checkPage("http://ie.microsoft.com/testdrive/Graphics/TouchEffects/", {passed: true}),
+////    'Uses touch with an @import rule': checkPage("http://www.computer-service-goeppingen.de", {passed: true}),
+////    'www.ietestdrive.com': checkPage("http://www.ietestdrive.com", {passed: true}),
+////    'ie.microsoft.com/testdrive/Graphics/TouchEffects/': checkPage("http://ie.microsoft.com/testdrive/Graphics/TouchEffects/", {passed: true}),
+////    'ie.microsoft.com/testdrive/Browser/BrowserSurface/': checkPage("http://ie.microsoft.com/testdrive/Browser/BrowserSurface/", {passed: true}),
+////    'maps.bing.com': checkPage("http://maps.bing.com", {passed: true}),
+////    'maps.google.com': checkPage("http://maps.google.com", {passed: true}),
+////    't.msn.com': checkPage("http://t.msn.com", {passed: true}),
+////    'www.craigslist.org': checkPage("http://www.craigslist.org", {passed: true}),
+////    'www.reddit.com': checkPage("http://www.reddit.com", {passed: false}),
+////    'www.microsoft.com': checkPage("http://www.microsoft.com", {passed: false}),
+////    'www.windows.com': checkPage("http://www.windows.com", {passed: false})
+//};

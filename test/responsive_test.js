@@ -14,122 +14,124 @@
  * See the Apache Version 2.0 License for specific language governing permissions
  * and limitations under the License.
  */
+ 
+//*** check was removed - see run.js line 77 - so we don't need to test it
 
-"use strict";
+//"use strict";
 
-var responsive = require('../lib/checks/check-responsive.js'),
-    url = require('url'),
-    config = require('../lib/checks/config.js'),
-    cssloader = require('../lib/checks/loadcss.js'),
-    request = require('request'),
-    cheerio = require('cheerio'),
-    testServer = require('../static/test-server.js'),
-    testUrl = 'http://localhost:' + testServer.port + '/rwd-';
+//var responsive = require('../lib/checks/check-responsive.js'),
+//    url = require('url'),
+//    config = require('../lib/checks/config.js'),
+//    cssloader = require('../lib/checks/loadcss.js'),
+//    request = require('request'),
+//    cheerio = require('cheerio'),
+//    testServer = require('../static/test-server.js'),
+//    testUrl = 'http://localhost:' + testServer.port + '/rwd-';
 
 
-function checkPage(page, expected) {
-    return function (test) {
-        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
-            tests = 1;
+//function checkPage(page, expected) {
+//    return function (test) {
+//        var uri = page.indexOf('http') === 0 ? page : testUrl + page,
+//            tests = 1;
 
-        if (expected.data) {
-            tests += Object.keys(expected.data).length;
-        }
+//        if (expected.data) {
+//            tests += Object.keys(expected.data).length;
+//        }
 
-        test.expect(tests);
+//        test.expect(tests);
 
-        request({uri: uri,
-                headers: {'user-agent': config.user_agent_edge}},
-            function (error, response, content) {
-                var website = {
-                    url: url.parse(uri),
-                    content: content,
-                    $: cheerio.load(content)
-                };
+//        request({uri: uri,
+//                headers: {'user-agent': config.user_agent_edge}},
+//            function (error, response, content) {
+//                var website = {
+//                    url: url.parse(uri),
+//                    content: content,
+//                    $: cheerio.load(content)
+//                };
 
-                cssloader.loadCssFiles(website)
-                    .then(responsive.check)
-                    .then(function (result) {
-                        test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
+//                cssloader.loadCssFiles(website)
+//                    .then(responsive.check)
+//                    .then(function (result) {
+//                        test.equal(result.passed, expected.passed, uri + " passed: " + result.passed + " !== " + expected.passed);
 
-                        if (expected.data) {
-                            for (var key in expected.data) {
-                                test.deepEqual(result.data[key], expected.data[key], uri + " " + key + " " + result.data[key] + " !== " + expected.data[key]);
-                            }
-                        }
+//                        if (expected.data) {
+//                            for (var key in expected.data) {
+//                                test.deepEqual(result.data[key], expected.data[key], uri + " " + key + " " + result.data[key] + " !== " + expected.data[key]);
+//                            }
+//                        }
                         
-                        test.done();
-                    });
-            });
-    };
-}
+//                        test.done();
+//                    });
+//            });
+//    };
+//}
 
-module.exports['Responsive'] = {
-    'No CSS - No RWD': checkPage("1.html", {passed: false}),
-    'Simple CSS - No RWD': checkPage("2.html", {passed: false}),
-    'RWD - min-width': checkPage("3.html", {passed: true, data: {
-        minBreakPoints: [480],
-        maxBreakPoints: []
-    }}),
-    'RWD - max-width': checkPage("4.html", {passed: true, data: {
-        minBreakPoints: [],
-        maxBreakPoints: [480]
-    }}),
-    'RWD - min and max width': checkPage("5.html", {passed: true, data: {
-        minBreakPoints: [480, 780],
-        maxBreakPoints: [479]
-    }}),
-    'RWD - min and max width with different order': checkPage("6.html", {passed: true, data: {
-        minBreakPoints: [480, 780],
-        maxBreakPoints: [479]
-    }}),
-    'RWD - Duplicate widths': checkPage("7.html", {passed: true, data: {
-        minBreakPoints: [480, 780],
-        maxBreakPoints: [479]
-    }}),
-    'RWD - Several CSS files': checkPage("8.html", {passed: true, data: {
-        minBreakPoints: [480],
-        maxBreakPoints: [480]
-    }}),
-    'RWD - Embedded CSS': checkPage("9.html", {passed: true, data: {
-        minBreakPoints: [480],
-        maxBreakPoints: [479]
-    }}),
-    'RWD - min max width with EM': checkPage("10.html", {passed: true, data: {
-        minBreakPoints: [480, 780],
-        maxBreakPoints: [480]
-    }}),
-    'RWD - min BreakPoints Spectrum': checkPage("11.html", {passed: true, data: {
-        minBreakPoints: [360, 440, 720],
-        maxBreakPoints: [],
-        spectrum: [
-            {start: 360, end: 550},
-            {start: 720, end: 900}
-        ]
-    }}),
-    'RWD - max BreakPoints Spectrum': checkPage("12.html", {passed: true, data: {
-        minBreakPoints: [],
-        maxBreakPoints: [360, 440, 720],
-        spectrum: [
-            {start: 270, end: 440},
-            {start: 540, end: 720}
-        ]
-    }}),
-    'RWD - min and max BreakPoints Spectrum': checkPage("13.html", {passed: true, data: {
-        minBreakPoints: [360, 440, 720],
-        maxBreakPoints: [360, 440, 720],
-        spectrum: [
-            {start: 270, end: 900}
-        ]
-    }}),
-    'RWD - min and max BreakPoints Spectrum 2': checkPage("14.html", {passed: true, data: {
-        minBreakPoints: [100, 550, 1120],
-        maxBreakPoints: [360, 440, 720],
-        spectrum: [
-            {start: 100, end: 125},
-            {start: 270, end: 440},
-            {start: 540, end: 720},
-            {start: 1120, end: 1400}
-        ]
-    }})
-};
+//module.exports['Responsive'] = {
+//    'No CSS - No RWD': checkPage("1.html", {passed: false}),
+//    'Simple CSS - No RWD': checkPage("2.html", {passed: false}),
+//    'RWD - min-width': checkPage("3.html", {passed: true, data: {
+//        minBreakPoints: [480],
+//        maxBreakPoints: []
+//    }}),
+//    'RWD - max-width': checkPage("4.html", {passed: true, data: {
+//        minBreakPoints: [],
+//        maxBreakPoints: [480]
+//    }}),
+//    'RWD - min and max width': checkPage("5.html", {passed: true, data: {
+//        minBreakPoints: [480, 780],
+//        maxBreakPoints: [479]
+//    }}),
+//    'RWD - min and max width with different order': checkPage("6.html", {passed: true, data: {
+//        minBreakPoints: [480, 780],
+//        maxBreakPoints: [479]
+//    }}),
+//    'RWD - Duplicate widths': checkPage("7.html", {passed: true, data: {
+//        minBreakPoints: [480, 780],
+//        maxBreakPoints: [479]
+//    }}),
+//    'RWD - Several CSS files': checkPage("8.html", {passed: true, data: {
+//        minBreakPoints: [480],
+//        maxBreakPoints: [480]
+//    }}),
+//    'RWD - Embedded CSS': checkPage("9.html", {passed: true, data: {
+//        minBreakPoints: [480],
+//        maxBreakPoints: [479]
+//    }}),
+//    'RWD - min max width with EM': checkPage("10.html", {passed: true, data: {
+//        minBreakPoints: [480, 780],
+//        maxBreakPoints: [480]
+//    }}),
+//    'RWD - min BreakPoints Spectrum': checkPage("11.html", {passed: true, data: {
+//        minBreakPoints: [360, 440, 720],
+//        maxBreakPoints: [],
+//        spectrum: [
+//            {start: 360, end: 550},
+//            {start: 720, end: 900}
+//        ]
+//    }}),
+//    'RWD - max BreakPoints Spectrum': checkPage("12.html", {passed: true, data: {
+//        minBreakPoints: [],
+//        maxBreakPoints: [360, 440, 720],
+//        spectrum: [
+//            {start: 270, end: 440},
+//            {start: 540, end: 720}
+//        ]
+//    }}),
+//    'RWD - min and max BreakPoints Spectrum': checkPage("13.html", {passed: true, data: {
+//        minBreakPoints: [360, 440, 720],
+//        maxBreakPoints: [360, 440, 720],
+//        spectrum: [
+//            {start: 270, end: 900}
+//        ]
+//    }}),
+//    'RWD - min and max BreakPoints Spectrum 2': checkPage("14.html", {passed: true, data: {
+//        minBreakPoints: [100, 550, 1120],
+//        maxBreakPoints: [360, 440, 720],
+//        spectrum: [
+//            {start: 100, end: 125},
+//            {start: 270, end: 440},
+//            {start: 540, end: 720},
+//            {start: 1120, end: 1400}
+//        ]
+//    }})
+//};

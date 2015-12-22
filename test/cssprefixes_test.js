@@ -23,9 +23,12 @@ var cssprefixes = require('../lib/checks/check-cssprefixes.js'),
     cssloader = require('../lib/checks/loadcss.js'),
     request = require('request'),
     cheerio = require('cheerio'),
+    path = require('path'),
+    whitelistReader = require('../lib/checks/loadwhitelist.js'),
     testServer = require('../static/test-server.js'),
     testUrl = 'http://localhost:' + testServer.port + '/cssprefixes-';
 
+var globalWhitelistedProperties = whitelistReader.load(path.join(__dirname, "../lib/checks/whitelisted-properties.json"));
 
 function checkPage(page, expected, whitelistedProperties) {
     return function (test) {
@@ -92,4 +95,6 @@ module.exports['CSS Prefixes'] = {
     'Missing prefixes but whitelisted all': checkPage("22.html", { passed: true }, ["transform", "animation"]),
     'Missing prefixes, none whitelisted': checkPage("22.html", { passed: false }, []),
     'Missing prefixes, only one whitelisted': checkPage("22.html", { passed: false }, ["transform"]),
+    /* Configured Whitelisted properties (source: whitelisted-properites.json) */
+    'Whitelisted padding & margin prefixes': checkPage("23.html", { passed: true }, globalWhitelistedProperties),
 };

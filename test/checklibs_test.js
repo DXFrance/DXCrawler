@@ -30,46 +30,81 @@ function checkPage(page, test, expected, config) {
     var uri = testUrl + page,
         dataKeys = [],
         tests = 1;
-
+    
     if (expected.data) {
         dataKeys = Object.keys(expected.data[0]);
         tests += dataKeys.length * expected.data.length;
     }
-
+    
     test.expect(tests);
-
+    
     request(uri, function (error, response, content) {
         var website = {
             url: url.parse(uri),
             content: content,
             $: cheerio.load(content)
         };
-
+        
         if (config)
             checklibs.merge(config);
-
+        
         jsloader.loadjsFiles(website)
             .then(checklibs.check)
             .then(function (result) {
-                test.equal(result.passed, expected.passed, uri + " " + result.data.join("\n"));
-                if (expected.data) {
-                    for (var i = 0; i < expected.data.length; i++) {
-                        for (var key in expected.data[i]) {
-                            test.equal(result.data[i][key], expected.data[i][key], uri + " " + result.data[i][key]);
-                        }
+            test.equal(result.passed, expected.passed, uri + " " + result.data.join("\n"));
+            if (expected.data) {
+                for (var i = 0; i < expected.data.length; i++) {
+                    for (var key in expected.data[i]) {
+                        test.equal(result.data[i] ? result.data[i][key] : null, expected.data[i][key], uri + " " + (result.data[i] ?result.data[i][key] : null));
                     }
                 }
-
-                if (config)
-                    checklibs.merge(null);
-                    
-                test.done();
-            });
+            }
+            
+            if (config)
+                checklibs.merge(null);
+            
+            test.done();
+        });
     });
+}
+
+function checkCompareVersions(test, expected, data) {
+    test.equal(checklibs.checkCompareVersions(data.v1, data.v2), expected);
+    test.done();
 }
 
 
 module.exports['JS Libraries'] = {
+    '1.7.1 < 1.7.10': function (test) {
+        checkCompareVersions(test, -1, {
+            v1: "1.7.1",
+            v2: "1.7.10"
+        });
+    }, 
+    '1.7.10 > 1.7.1': function (test) {
+        checkCompareVersions(test, 1, {
+            v1: "1.7.10",
+            v2: "1.7.1"
+        });
+    },
+    '1.8 == 1.8': function (test) {
+        checkCompareVersions(test, 0, {
+            v1: "1.8",
+            v2: "1.8"
+        });
+    },
+    '1.8 > 1.5.10': function (test) {
+        checkCompareVersions(test, 1, {
+            v1: "1.8",
+            v2: "1.5.10"
+        });
+    },
+    '1.10.2 > 1.1.10': function (test) {
+        checkCompareVersions(test, 1, {
+            v1: "1.10.2",
+            v2: "1.1.10"
+        });
+    },
     'jQuery - latest version': function (test) {
         checkPage('1.html', test, {
             passed: true
@@ -88,54 +123,55 @@ module.exports['JS Libraries'] = {
         });
     },
     'dojo - latest version': function (test) {
-        checkPage('3.html', test, {passed: true});
+        checkPage('3.html', test, { passed: true });
     },
-    'dojo - v1.8.0': function (test) {
+    'dojo - v1.5.0': function (test) {
         checkPage('4.html', test, {
-			passed: false,
-            data: [
-                {
-                    lineNumber: 7,
-                    version: "1.8.0",
-                    minVersion: "1.8.5"
-                }
-            ]
-		});
-    },
-    'jQuery UI - latest version': function (test) {
-        checkPage('5.html', test, {passed: true});
-    },
-    'jQuery UI - v1.9.0': function (test) {
-        checkPage('6.html', test, {
             passed: false,
             data: [
                 {
-                    name: "jQuery UI",
                     lineNumber: 7,
-                    version: "1.9.0",
-                    minVersion: "1.9.2"
+                    version: "1.5.0",
+                    minVersion: "1.5.3"
                 }
             ]
         });
     },
-    'jQuery UI - v1.9.0 min': function (test) {
-        checkPage('7.html', test, {
-            passed: false
+    'jQuery UI - latest version': function (test) {
+        checkPage('5.html', test, { passed: true });
+    },
+    'jQuery UI - v1.8.20': function (test) {
+        checkPage('16.html', test, {
+            passed: false,
+            data: [
+                {
+                    lineNumber: 7,
+                    version: "1.8.20",
+                    minVersion: "1.8.24"
+                }
+            ]
         });
+    },    
+    'jQuery UI - v1.9.0': function (test) {
+        // Validates that 1.9.0 > minVersion of 1.8.24
+        checkPage('6.html', test, { passed: true });
+    },
+    'jQuery UI - v1.9.0 min': function (test) {
+        checkPage('7.html', test, { passed: true });
     },
     'jQuery & dojo up to date': function (test) {
         checkPage('8.html', test, {
             passed: true
         });
     },
-    'jQuery up to date & dojo v 1.7.0': function (test) {
+    'jQuery up to date & dojo v 1.5.1': function (test) {
         checkPage('9.html', test, {
             passed: false,
             data: [
                 {
                     lineNumber: 8,
-                    version: "1.7.0",
-                    minVersion: "1.7.5"
+                    version: "1.5.1",
+                    minVersion: "1.5.3"
                 }
             ]
         });
@@ -151,8 +187,8 @@ module.exports['JS Libraries'] = {
                 },
                 {
                     lineNumber: 8,
-                    version: "1.7.0",
-                    minVersion: "1.7.5"
+                    version: "1.5.1",
+                    minVersion: "1.5.3"
                 }
             ]
         });
@@ -188,8 +224,8 @@ module.exports['JS Libraries'] = {
             passed: false,
             data: [
                 {
-                    version: "1.4.0",
-                    minVersion: "1.4.1",
+                    version: "1.3.0",
+                    minVersion: "1.3.1",
                     name: "jQuery cookie"
                 },
                 {
@@ -198,14 +234,9 @@ module.exports['JS Libraries'] = {
                     name: "jQuery mousewheel"
                 },
                 {
-                    version: "1.8.0",
-                    minVersion: "1.8.1",
+                    version: "1.7.0",
+                    minVersion: "1.8.0",
                     name: "hoverIntent"
-                },
-                {
-                    version: "1.5.1",
-                    minVersion: "1.5.2",
-                    name: "underscore"
                 },
                 {
                     version: "1.4.2",
@@ -216,8 +247,8 @@ module.exports['JS Libraries'] = {
                     version: "2.0.1",
                     minVersion: "2.0.2",
                     name: "hammer js"
-                }            
-                ]
+                }
+            ]
         });
     },
     'several libraries outdated skip jQuery cookie': function (test) {
@@ -230,14 +261,9 @@ module.exports['JS Libraries'] = {
                     name: "jQuery mousewheel"
                 },
                 {
-                    version: "1.8.0",
-                    minVersion: "1.8.1",
+                    version: "1.7.0",
+                    minVersion: "1.8.0",
                     name: "hoverIntent"
-                },
-                {
-                    version: "1.5.1",
-                    minVersion: "1.5.2",
-                    name: "underscore"
                 },
                 {
                     version: "1.4.2",
@@ -248,14 +274,14 @@ module.exports['JS Libraries'] = {
                     version: "2.0.1",
                     minVersion: "2.0.2",
                     name: "hammer js"
-                }            
-                ]
+                }
+            ]
         },
         [
-                {
-                    name: "jQuery cookie",
-                    skip: true
-                }
+            {
+                name: "jQuery cookie",
+                skip: true
+            }
         ]
         );
     },
@@ -264,8 +290,8 @@ module.exports['JS Libraries'] = {
             passed: false,
             data: [
                 {
-                    version: "1.4.0",
-                    minVersion: "1.4.1",
+                    version: "1.3.0",
+                    minVersion: "1.3.1",
                     name: "jQuery cookie"
                 },
                 {
@@ -274,14 +300,9 @@ module.exports['JS Libraries'] = {
                     name: "jQuery mousewheel"
                 },
                 {
-                    version: "1.8.0",
-                    minVersion: "1.8.1",
+                    version: "1.7.0",
+                    minVersion: "1.8.0",
                     name: "hoverIntent"
-                },
-                {
-                    version: "1.5.1",
-                    minVersion: "1.5.2",
-                    name: "underscore"
                 },
                 {
                     version: "1.4.2",
@@ -297,18 +318,24 @@ module.exports['JS Libraries'] = {
                     version: "1.2.3",
                     minVersion: "1.2.4",
                     name: "mytools"
-                }            
-                ]
+                }
+            ]
         },
         [
             {
                 name: "mytools",
                 match: "mytools.(\\d+\\.\\d+\\.\\d+)",
-                minVersions: [
-                    { major: "1.2.", minor: "4" }
-                ]
+                minVersion: { major: "1.2.", minor: "4" }
             }
-        ]
+        ]          
         );
-    }
+    },
+    // Unit test for issue #16 (https://github.com/deltakosh/DXCrawler/issues/16)
+    // Tests both compiled & minified version of Bootstrap 3.3.5 which previously caused a
+    // false negative scan (detected as out dated jQuery)
+    'Boostrap 3.3.5': function (test) {
+        checkPage('15.html', test, {
+            passed: true
+        });
+    }  
 };
